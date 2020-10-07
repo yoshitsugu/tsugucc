@@ -1,6 +1,11 @@
 CFLAGS=-std=c11 -g -static
+SRCS=$(wildcard *.c)
+OBJS=$(SRCS:.c=.o)
 
-tsugucc: tsugucc.c
+tsugucc: $(OBJS)
+	$(CC) -o $@ $(OBJS) $(LDFLAGS)
+
+$(OBJS): tsugucc.h
 
 test: tsugucc
 	./test.sh
