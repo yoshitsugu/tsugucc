@@ -161,8 +161,6 @@ typedef enum
     ND_NE,  // !=
     ND_LT,  // <
     ND_LE,  // <=
-    ND_GT,  // >
-    ND_GE,  // >=
     ND_NUM, // 整数
 } NodeKind;
 
@@ -228,14 +226,14 @@ Node *relational()
 
     for (;;)
     {
-        if (consume("<="))
-            node = new_node(ND_LE, node, add());
-        else if (consume(">="))
-            node = new_node(ND_GE, node, add());
-        else if (consume(">"))
-            node = new_node(ND_GT, node, add());
-        else if (consume("<"))
+        if (consume("<"))
             node = new_node(ND_LT, node, add());
+        else if (consume("<="))
+            node = new_node(ND_LE, node, add());
+        else if (consume(">"))
+            node = new_node(ND_LT, add(), node);
+        else if (consume(">="))
+            node = new_node(ND_LE, add(), node);
         else
             return node;
     }
@@ -339,16 +337,6 @@ void gen(Node *node)
     case ND_LT:
         printf("  cmp rax, rdi\n");
         printf("  setl al\n");
-        printf("  movzb rax,al\n");
-        break;
-    case ND_GE:
-        printf("  cmp rax, rdi\n");
-        printf("  setge al\n");
-        printf("  movzb rax,al\n");
-        break;
-    case ND_GT:
-        printf("  cmp rax, rdi\n");
-        printf("  setg al\n");
         printf("  movzb rax,al\n");
         break;
     }
