@@ -11,8 +11,9 @@ int main(int argc, char **argv)
     // トークナイズしてパースする
     user_input = argv[1];
     token = tokenize();
-    Node *node = expr();
+    Node *code[100];
+    program(code);
 
-    codegen(node);
+    codegen(code);
     return 0;
 }
