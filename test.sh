@@ -24,6 +24,6 @@ assert 1 '(-33+35)/2;'
 assert 1 '(2 * 3) <= 6;'
 assert 0 '(2 * 3) < 6;'
 assert 4 'a = 1;b = 3;a + b;'
-assert 4 'a = 100;b = 2;c = a = 1;a + b + c;'
+assert 4 'abc = 100;b2 = 2;cde = abc = 1;abc + b2 + cde;'
 
 echo OK

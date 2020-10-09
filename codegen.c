@@ -87,10 +87,10 @@ void codegen(Node *code[])
     printf("main:\n");
 
     // プロローグ
-    // 変数26個分の領域を確保する
     printf("  push rbp\n");
     printf("  mov rbp, rsp\n");
-    printf("  sub rsp, 208\n");
+    if (locals)
+        printf("  sub rsp, %d\n", locals->offset);
 
     for (int i = 0; code[i]; i++)
     {
