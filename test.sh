@@ -23,7 +23,7 @@ assert 4 '(3+5)/2;'
 assert 1 '(-33+35)/2;'
 assert 1 '(2 * 3) <= 6;'
 assert 0 '(2 * 3) < 6;'
-assert 4 'a = 1;b = 3;a + b;'
+assert 4 'a = 1;b = 3;return a + b;3 * 3;'
 assert 4 'abc = 100;b2 = 2;cde = abc = 1;abc + b2 + cde;'
 
 echo OK
