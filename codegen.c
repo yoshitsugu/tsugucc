@@ -14,6 +14,7 @@ void gen_lval(Node *node)
 
 void gen(Node *node)
 {
+    int seq;
     switch (node->kind)
     {
     case ND_RETURN:
@@ -25,7 +26,7 @@ void gen(Node *node)
         return;
     case ND_IF:
         jmp_label_count++;
-        int seq = jmp_label_count;
+        seq = jmp_label_count;
         gen(node->cond);
         printf("  pop rax\n");
         printf("  cmp rax, 0\n");
@@ -44,6 +45,18 @@ void gen(Node *node)
             gen(node->then);
             printf(".Lend%d:\n", seq);
         }
+        return;
+    case ND_WHILE:
+        jmp_label_count++;
+        seq = jmp_label_count;
+        printf(".Lbegin%d:\n", seq);
+        gen(node->cond);
+        printf("  pop rax\n");
+        printf("  cmp rax, 0\n");
+        printf("  je .Lend%d\n", seq);
+        gen(node->then);
+        printf("  jmp .Lbegin%d\n", seq);
+        printf(".Lend%d:\n", seq);
         return;
     case ND_NUM:
         printf("  push %d\n", node->val);
