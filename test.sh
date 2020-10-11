@@ -29,5 +29,7 @@ assert 3 'if (1-1) return 1; else return 3;'
 assert 1 'if (1) return 1; else return 3;'
 assert 3 'if (0) return 1; return 3;'
 assert 20 'i=0; while( i<20 ) i = i + 1;return i;'
+assert 11 'a = 1;for(i=0;i<5;i=i+1) a = a + i; return a;'
+assert 5 'i = 0;for(;i<5;) i = i + 1; return i;'
 
 echo OK

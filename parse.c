@@ -85,6 +85,30 @@ Node *stmt()
         return node;
     }
 
+    if (consume("for"))
+    {
+        node = calloc(1, sizeof(Node));
+        expect("(");
+        node->kind = ND_FOR;
+        if (!consume(";"))
+        {
+            node->init = expr();
+            expect(";");
+        }
+        if (!consume(";"))
+        {
+            node->cond = expr();
+            expect(";");
+        }
+        if (!consume(")"))
+        {
+            node->inc = expr();
+            expect(")");
+        }
+        node->then = stmt();
+        return node;
+    }
+
     node = expr();
     expect(";");
     return node;
