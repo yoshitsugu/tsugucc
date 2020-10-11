@@ -1,10 +1,15 @@
 #!/bin/bash
+cat <<EOF | gcc -xc -c -o tmp2.o -
+int ret3() { return 3; }
+int add6(int a, int b, int c, int d, int e, int f) { return a + b + c + d + e + f; }
+EOF
+
 assert() {
   expected="$1"
   input="$2"
 
   ./tsugucc "$input" > tmp.s
-  cc -o tmp tmp.s
+  cc -o tmp tmp.s tmp2.o
   ./tmp
   actual="$?"
 
@@ -33,5 +38,7 @@ assert 11 'a = 1;for(i=0;i<5;i=i+1) a = a + i; return a;'
 assert 5 'i = 0;for(;i<5;) i = i + 1; return i;'
 assert 4 '{ 1; {  3; } return 4; } '
 assert 8 'if (0) { a = 1; b = 2; } else { a = 3; b = 5;} return a + b;'
+assert 3 'return ret3();'
+assert 21 'add6(1, 2, 3, 4, 5, 6);'
 
 echo OK

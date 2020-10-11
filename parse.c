@@ -214,6 +214,22 @@ Node *unary()
     return primary();
 }
 
+Node *func_args()
+{
+    if (consume(")"))
+        return NULL;
+
+    Node *head = assign();
+    Node *cur = head;
+    while (consume(","))
+    {
+        cur->next = assign();
+        cur = cur->next;
+    }
+    expect(")");
+    return head;
+}
+
 Node *primary()
 {
     if (consume("("))
@@ -226,8 +242,16 @@ Node *primary()
     Token *tok = consume_ident();
     if (tok)
     {
-        Node *node = calloc(1, sizeof(Node));
-        node->kind = ND_LVAR;
+        Node *node;
+
+        if (consume("("))
+        {
+            node = new_node(ND_FUNCALL);
+            node->funcname = strndup(tok->str, tok->len);
+            node->args = func_args();
+            return node;
+        }
+        node = new_node(ND_LVAR);
 
         LVar *lvar = find_lvar(tok);
         if (lvar)

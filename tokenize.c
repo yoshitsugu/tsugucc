@@ -97,6 +97,16 @@ int is_alnum(char c)
            ('0' <= c && c <= '9');
 }
 
+char *strndup(char *str, int len)
+{
+
+    char *buffer = malloc(len + 1);
+    memcpy(buffer, str, len);
+    buffer[len] = '\0';
+
+    return buffer;
+}
+
 char *starts_with_reserved(char *p)
 {
     // Keyword
@@ -143,7 +153,7 @@ Token *tokenize()
             continue;
         }
 
-        if (strchr("+-*/()<>;={}", *p))
+        if (strchr("+-*/()<>;={},", *p))
         {
             cur = new_token(TK_RESERVED, cur, p++, 1);
             continue;

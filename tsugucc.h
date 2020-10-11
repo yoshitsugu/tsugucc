@@ -48,6 +48,7 @@ bool consume(char *op);
 Token *consume_ident();
 bool expect(char *op);
 int expect_number();
+char *strndup(char *str, int len);
 bool at_eof();
 Token *new_token(TokenKind kind, Token *cur, char *str, int len);
 Token *tokenize();
@@ -61,22 +62,23 @@ extern Token *token;
 
 typedef enum
 {
-    ND_ADD,    // +
-    ND_SUB,    // -
-    ND_MUL,    // *
-    ND_DIV,    // /
-    ND_EQ,     // ==
-    ND_NE,     // !=
-    ND_LT,     // <
-    ND_LE,     // <=
-    ND_NUM,    // 整数
-    ND_ASSIGN, // =
-    ND_LVAR,   // ローカル変数
-    ND_RETURN, // return
-    ND_IF,     // if
-    ND_WHILE,  // while
-    ND_FOR,    // for
-    ND_BLOCK,  // 複文(ブロック)
+    ND_ADD,     // +
+    ND_SUB,     // -
+    ND_MUL,     // *
+    ND_DIV,     // /
+    ND_EQ,      // ==
+    ND_NE,      // !=
+    ND_LT,      // <
+    ND_LE,      // <=
+    ND_NUM,     // 整数
+    ND_ASSIGN,  // =
+    ND_LVAR,    // ローカル変数
+    ND_RETURN,  // return
+    ND_IF,      // if
+    ND_WHILE,   // while
+    ND_FOR,     // for
+    ND_BLOCK,   // 複文(ブロック)
+    ND_FUNCALL, // 関数呼出
 } NodeKind;
 
 typedef struct Node Node;
@@ -99,6 +101,10 @@ struct Node
 
     // Block
     Node *body;
+
+    // Function call
+    char *funcname;
+    Node *args;
 
     int val;    // kindがND_NUMの場合のみ使う
     int offset; // kindがND_LVARの場合のみ使う
