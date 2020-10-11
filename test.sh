@@ -25,5 +25,8 @@ assert 1 '(2 * 3) <= 6;'
 assert 0 '(2 * 3) < 6;'
 assert 4 'a = 1;b = 3;return a + b;3 * 3;'
 assert 4 'abc = 100;b2 = 2;cde = abc = 1;abc + b2 + cde;'
+assert 3 'if (1-1) return 1; else return 3;'
+assert 1 'if (1) return 1; else return 3;'
+assert 3 'if (0) return 1; return 3;'
 
 echo OK

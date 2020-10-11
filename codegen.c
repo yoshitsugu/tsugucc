@@ -1,5 +1,7 @@
 #include "tsugucc.h"
 
+int jmp_label_count = 0;
+
 void gen_lval(Node *node)
 {
     if (node->kind != ND_LVAR)
@@ -20,6 +22,28 @@ void gen(Node *node)
         printf("  mov rsp, rbp\n");
         printf("  pop rbp\n");
         printf("  ret\n");
+        return;
+    case ND_IF:
+        jmp_label_count++;
+        int seq = jmp_label_count;
+        gen(node->cond);
+        printf("  pop rax\n");
+        printf("  cmp rax, 0\n");
+        if (node->els)
+        {
+            printf("  je .Lelse%d\n", seq);
+            gen(node->then);
+            printf("  jmp .Lend%d\n", seq);
+            printf(".Lelse%d:\n", seq);
+            gen(node->els);
+            printf(".Lend%d:\n", seq);
+        }
+        else
+        {
+            printf("  je .Lend%d\n", seq);
+            gen(node->then);
+            printf(".Lend%d:\n", seq);
+        }
         return;
     case ND_NUM:
         printf("  push %d\n", node->val);
