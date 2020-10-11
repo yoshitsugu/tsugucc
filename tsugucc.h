@@ -75,7 +75,8 @@ typedef enum
     ND_RETURN, // return
     ND_IF,     // if
     ND_WHILE,  // while
-    ND_FOR     // for
+    ND_FOR,    // for
+    ND_BLOCK,  // 複文(ブロック)
 } NodeKind;
 
 typedef struct Node Node;
@@ -84,8 +85,10 @@ typedef struct Node Node;
 struct Node
 {
     NodeKind kind; // ノードの型
-    Node *lhs;     // 左辺
-    Node *rhs;     // 右辺
+    Node *next;    // Next node
+
+    Node *lhs; // 左辺
+    Node *rhs; // 右辺
 
     // "if", "while" or "for" statement
     Node *cond;
@@ -93,6 +96,9 @@ struct Node
     Node *els;
     Node *init;
     Node *inc;
+
+    // Block
+    Node *body;
 
     int val;    // kindがND_NUMの場合のみ使う
     int offset; // kindがND_LVARの場合のみ使う

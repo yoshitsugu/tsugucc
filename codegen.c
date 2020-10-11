@@ -24,6 +24,10 @@ void gen(Node *node)
         printf("  pop rbp\n");
         printf("  ret\n");
         return;
+    case ND_BLOCK:
+        for (Node *n = node->body; n; n = n->next)
+            gen(n);
+        return;
     case ND_IF:
         jmp_label_count++;
         seq = jmp_label_count;

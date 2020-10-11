@@ -54,8 +54,7 @@ Node *stmt()
 
     if (consume("return"))
     {
-        node = calloc(1, sizeof(Node));
-        node->kind = ND_RETURN;
+        node = new_node(ND_RETURN);
         node->lhs = expr();
         expect(";");
         return node;
@@ -63,9 +62,8 @@ Node *stmt()
 
     if (consume("if"))
     {
-        node = calloc(1, sizeof(Node));
+        node = new_node(ND_IF);
         expect("(");
-        node->kind = ND_IF;
         node->cond = expr();
         expect(")");
         node->then = stmt();
@@ -76,9 +74,8 @@ Node *stmt()
 
     if (consume("while"))
     {
-        node = calloc(1, sizeof(Node));
+        node = new_node(ND_WHILE);
         expect("(");
-        node->kind = ND_WHILE;
         node->cond = expr();
         expect(")");
         node->then = stmt();
@@ -87,9 +84,8 @@ Node *stmt()
 
     if (consume("for"))
     {
-        node = calloc(1, sizeof(Node));
+        node = new_node(ND_FOR);
         expect("(");
-        node->kind = ND_FOR;
         if (!consume(";"))
         {
             node->init = expr();
@@ -106,6 +102,23 @@ Node *stmt()
             expect(")");
         }
         node->then = stmt();
+        return node;
+    }
+
+    if (consume("{"))
+    {
+        Node head;
+        head.next = NULL;
+        Node *cur = &head;
+
+        while (!consume("}"))
+        {
+            cur->next = stmt();
+            cur = cur->next;
+        }
+
+        Node *node = new_node(ND_BLOCK);
+        node->body = head.next;
         return node;
     }
 
