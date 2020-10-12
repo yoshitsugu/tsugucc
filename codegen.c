@@ -2,15 +2,19 @@
 
 int jmp_label_count = 0;
 char *argreg[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9"};
+char *funcname;
 
-void gen_lval(Node *node)
+// Pushes the given node's address to the stack.
+void gen_addr(Node *node)
 {
-    if (node->kind != ND_LVAR)
-        error("代入の左辺値が変数ではありません");
+    if (node->kind == ND_VAR)
+    {
+        printf("  lea rax, [rbp-%d]\n", node->var->offset);
+        printf("  push rax\n");
+        return;
+    }
 
-    printf("  mov rax, rbp\n");
-    printf("  sub rax, %d\n", node->offset);
-    printf("  push rax\n");
+    error("not an lvalue");
 }
 
 void gen(Node *node)
@@ -21,9 +25,7 @@ void gen(Node *node)
     case ND_RETURN:
         gen(node->lhs);
         printf("  pop rax\n");
-        printf("  mov rsp, rbp\n");
-        printf("  pop rbp\n");
-        printf("  ret\n");
+        printf("  jmp .Lreturn.%s\n", funcname);
         return;
     case ND_BLOCK:
         for (Node *n = node->body; n; n = n->next)
@@ -117,14 +119,14 @@ void gen(Node *node)
     case ND_NUM:
         printf("  push %d\n", node->val);
         return;
-    case ND_LVAR:
-        gen_lval(node);
+    case ND_VAR:
+        gen_addr(node);
         printf("  pop rax\n");
         printf("  mov rax, [rax]\n");
         printf("  push rax\n");
         return;
     case ND_ASSIGN:
-        gen_lval(node->lhs);
+        gen_addr(node->lhs);
         gen(node->rhs);
 
         printf("  pop rdi\n");
@@ -180,30 +182,29 @@ void gen(Node *node)
     printf("  push rax\n");
 }
 
-void codegen(Node *code[])
+void codegen(Function *prog)
 {
     printf(".intel_syntax noprefix\n");
-    printf(".global main\n");
-    printf("main:\n");
 
-    // プロローグ
-    printf("  push rbp\n");
-    printf("  mov rbp, rsp\n");
-    if (locals)
-        printf("  sub rsp, %d\n", locals->offset);
-
-    for (int i = 0; code[i]; i++)
+    for (Function *fn = prog; fn; fn = fn->next)
     {
-        gen(code[i]);
+        printf(".global %s\n", fn->name);
+        printf("%s:\n", fn->name);
+        funcname = fn->name;
 
-        // スタックトップに式全体の値が残っているはずなので
-        // それをRAXにロードして関数からの返り値とする
-        printf("  pop rax\n");
+        // プロローグ
+        printf("  push rbp\n");
+        printf("  mov rbp, rsp\n");
+        printf("  sub rsp, %d\n", fn->stack_size);
+
+        for (Node *node = fn->node; node; node = node->next)
+            gen(node);
+
+        // エピローグ
+        // 最後の式の結果がRAXに残っているのでそれが返り値になる
+        printf(".Lreturn.%s:\n", funcname);
+        printf("  mov rsp, rbp\n");
+        printf("  pop rbp\n");
+        printf("  ret\n");
     }
-
-    // エピローグ
-    // 最後の式の結果がRAXに残っているのでそれが返り値になる
-    printf("  mov rsp, rbp\n");
-    printf("  pop rbp\n");
-    printf("  ret\n");
 }

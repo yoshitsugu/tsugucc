@@ -28,25 +28,20 @@ struct Token
     int len;
 };
 
-typedef struct LVar LVar;
-
-// ローカル変数の型
-struct LVar
+typedef struct Var Var;
+struct Var
 {
-    LVar *next; // 次の変数かNULL
-    char *name; // 変数の名前
-    int len;    // 名前の長さ
+    Var *next;
+    char *name; // 変数名
     int offset; // RBPからのオフセット
 };
-
-// ローカル変数
-extern LVar *locals;
 
 void error_at(char *loc, char *fmt, ...);
 void error(char *fmt, ...);
 bool consume(char *op);
 Token *consume_ident();
 bool expect(char *op);
+char *expect_ident();
 int expect_number();
 char *strndup(char *str, int len);
 bool at_eof();
@@ -72,13 +67,14 @@ typedef enum
     ND_LE,      // <=
     ND_NUM,     // 整数
     ND_ASSIGN,  // =
-    ND_LVAR,    // ローカル変数
+    ND_VAR,     // ローカル変数
     ND_RETURN,  // return
     ND_IF,      // if
     ND_WHILE,   // while
     ND_FOR,     // for
     ND_BLOCK,   // 複文(ブロック)
     ND_FUNCALL, // 関数呼出
+    ND_FUNCDEF, // 関数定義
 } NodeKind;
 
 typedef struct Node Node;
@@ -102,18 +98,28 @@ struct Node
     // Block
     Node *body;
 
-    // Function call
+    // Function
     char *funcname;
     Node *args;
 
-    int val;    // kindがND_NUMの場合のみ使う
-    int offset; // kindがND_LVARの場合のみ使う
+    Var *var; // kindがND_LVARの場合のみ使う
+    int val;  // kindがND_NUMの場合のみ使う
 };
 
-void program(Node *code[]);
+typedef struct Function Function;
+struct Function
+{
+    Function *next;
+    char *name;
+    Node *node;
+    Var *locals;
+    int stack_size;
+};
+
+Function *program();
 
 //
 // codegen.c
 //
 
-void codegen(Node *code[]);
+void codegen(Function *code);

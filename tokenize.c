@@ -64,6 +64,15 @@ int expect_number()
     return val;
 }
 
+char *expect_ident()
+{
+    if (token->kind != TK_IDENT)
+        error_at(token->str, "識別子ではありません");
+    char *ident = token->str;
+    token = token->next;
+    return ident;
+}
+
 bool at_eof()
 {
     return token->kind == TK_EOF;
@@ -73,7 +82,7 @@ Token *new_token(TokenKind kind, Token *cur, char *str, int len)
 {
     Token *tok = calloc(1, sizeof(Token));
     tok->kind = kind;
-    tok->str = str;
+    tok->str = strndup(str, len);
     tok->len = len;
     cur->next = tok;
     return tok;

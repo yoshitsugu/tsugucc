@@ -21,24 +21,25 @@ assert() {
   fi
 }
 
-assert 21 "5+20-4;"
-assert 41 " 12 + 34 - 5 ;"
-assert 15 '5*(9-6);'
-assert 4 '(3+5)/2;'
-assert 1 '(-33+35)/2;'
-assert 1 '(2 * 3) <= 6;'
-assert 0 '(2 * 3) < 6;'
-assert 4 'a = 1;b = 3;return a + b;3 * 3;'
-assert 4 'abc = 100;b2 = 2;cde = abc = 1;abc + b2 + cde;'
-assert 3 'if (1-1) return 1; else return 3;'
-assert 1 'if (1) return 1; else return 3;'
-assert 3 'if (0) return 1; return 3;'
-assert 20 'i=0; while( i<20 ) i = i + 1;return i;'
-assert 11 'a = 1;for(i=0;i<5;i=i+1) a = a + i; return a;'
-assert 5 'i = 0;for(;i<5;) i = i + 1; return i;'
-assert 4 '{ 1; {  3; } return 4; } '
-assert 8 'if (0) { a = 1; b = 2; } else { a = 3; b = 5;} return a + b;'
-assert 3 'return ret3();'
-assert 21 'add6(1, 2, 3, 4, 5, 6);'
+assert 21 "main () { 5+20-4; }"
+assert 41 "main () { 12 + 34 - 5 ; }"
+assert 15 "main() { 5*(9-6); }"
+assert 4  "main() { (3+5)/2; }"
+assert 1  "main() { (-33+35)/2; }"
+assert 1  "main() { (2 * 3) <= 6; }"
+assert 0  "main() { (2 * 3) < 6; }"
+assert 4  "main() { a = 1;b = 3;return a + b;3 * 3; }"
+assert 4  "main() { abc = 100;b2 = 2;cde = abc = 1;abc + b2 + cde; }"
+assert 3  "main() { if (1-1) return 1; else return 3; }"
+assert 1  "main() { if (1) return 1; else return 3; }"
+assert 3  "main() { if (0) return 1; return 3; }"
+assert 20 "main() { i=0; while( i<20 ) i = i + 1;return i; }"
+assert 11 "main() { a = 1;for(i=0;i<5;i=i+1) a = a + i; return a; }"
+assert 5  "main() { i = 0;for(;i<5;) i = i + 1; return i; }"
+assert 4  "main() { { 1; {  3; } return 4; }  }"
+assert 8  "main() { if (0) { a = 1; b = 2; } else { a = 3; b = 5;} return a + b; }"
+assert 3  "main() { return ret3(); }"
+assert 21 "main() { add6(1, 2, 3, 4, 5, 6); }"
+assert 5  "return3() { return 3; } main() { return return3() + 2; }"
 
 echo OK

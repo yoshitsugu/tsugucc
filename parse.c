@@ -1,5 +1,6 @@
 #include "tsugucc.h"
 
+Function *function();
 Node *stmt();
 Node *expr();
 Node *assign();
@@ -9,6 +10,8 @@ Node *add();
 Node *mul();
 Node *unary();
 Node *primary();
+
+Var *locals;
 
 Node *new_node(NodeKind kind)
 {
@@ -32,20 +35,52 @@ Node *new_node_num(int val)
     return node;
 }
 
-LVar *find_lvar(Token *tok)
+Var *find_var(Token *tok)
 {
-    for (LVar *var = locals; var; var = var->next)
-        if (var->len == tok->len && !memcmp(tok->str, var->name, var->len))
+    for (Var *var = locals; var; var = var->next)
+        if (strlen(var->name) == tok->len && !memcmp(tok->str, var->name, tok->len))
             return var;
     return NULL;
 }
 
-void program(Node *code[])
+Function *program()
 {
-    int i = 0;
+    Function head;
+    head.next = NULL;
+    Function *cur = &head;
+
     while (!at_eof())
-        code[i++] = stmt();
-    code[i] = NULL;
+    {
+        cur->next = function();
+        cur = cur->next;
+    }
+    return head.next;
+}
+
+Function *function()
+{
+    locals = NULL;
+
+    char *name = expect_ident();
+    expect("(");
+    expect(")");
+    expect("{");
+
+    Node head;
+    head.next = NULL;
+    Node *cur = &head;
+
+    while (!consume("}"))
+    {
+        cur->next = stmt();
+        cur = cur->next;
+    }
+
+    Function *fn = calloc(1, sizeof(Function));
+    fn->name = name;
+    fn->node = head.next;
+    fn->locals = locals;
+    return fn;
 }
 
 Node *stmt()
@@ -230,6 +265,22 @@ Node *func_args()
     return head;
 }
 
+Node *new_var(Var *var)
+{
+    Node *node = new_node(ND_VAR);
+    node->var = var;
+    return node;
+}
+
+Var *push_var(char *name)
+{
+    Var *var = calloc(1, sizeof(Var));
+    var->next = locals;
+    var->name = name;
+    locals = var;
+    return var;
+}
+
 Node *primary()
 {
     if (consume("("))
@@ -251,27 +302,11 @@ Node *primary()
             node->args = func_args();
             return node;
         }
-        node = new_node(ND_LVAR);
 
-        LVar *lvar = find_lvar(tok);
-        if (lvar)
-        {
-            node->offset = lvar->offset;
-        }
-        else
-        {
-            lvar = calloc(1, sizeof(LVar));
-            lvar->next = locals;
-            lvar->name = tok->str;
-            lvar->len = tok->len;
-            if (locals)
-                lvar->offset = locals->offset + 8;
-            else
-                lvar->offset = 8;
-            node->offset = lvar->offset;
-            locals = lvar;
-        }
-        return node;
+        Var *var = find_var(tok);
+        if (!var)
+            var = push_var(strndup(tok->str, tok->len));
+        return new_var(var);
     }
 
     return new_node_num(expect_number());
