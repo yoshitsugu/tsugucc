@@ -31,9 +31,15 @@ struct Token
 typedef struct Var Var;
 struct Var
 {
-    Var *next;
     char *name; // 変数名
     int offset; // RBPからのオフセット
+};
+
+typedef struct VarList VarList;
+struct VarList
+{
+    VarList *next;
+    Var *var;
 };
 
 void error_at(char *loc, char *fmt, ...);
@@ -112,11 +118,13 @@ struct Function
     Function *next;
     char *name;
     Node *node;
-    Var *locals;
     int stack_size;
+    VarList *params; // 引数
+    VarList *locals; // ローカル変数
 };
 
 Function *program();
+Var *push_var(char *name);
 
 //
 // codegen.c

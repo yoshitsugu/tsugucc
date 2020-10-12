@@ -41,5 +41,6 @@ assert 8  "main() { if (0) { a = 1; b = 2; } else { a = 3; b = 5;} return a + b;
 assert 3  "main() { return ret3(); }"
 assert 21 "main() { add6(1, 2, 3, 4, 5, 6); }"
 assert 5  "return3() { return 3; } main() { return return3() + 2; }"
+assert 6  "add3(a, b, c) { return a + b + c; } main() { return add3(1,2,3); }"
 
 echo OK
