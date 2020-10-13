@@ -81,6 +81,8 @@ typedef enum
     ND_BLOCK,   // 複文(ブロック)
     ND_FUNCALL, // 関数呼出
     ND_FUNCDEF, // 関数定義
+    ND_ADDR,    // 単項演算子&
+    ND_DEREF,   // 単項演算子*
 } NodeKind;
 
 typedef struct Node Node;

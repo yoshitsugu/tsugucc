@@ -134,6 +134,15 @@ void gen(Node *node)
         printf("  mov [rax], rdi\n");
         printf("  push rdi\n");
         return;
+    case ND_ADDR:
+        gen_addr(node->lhs);
+        return;
+    case ND_DEREF:
+        gen(node->lhs);
+        printf("  pop rax\n");
+        printf("  mov rax, [rax]\n");
+        printf("  push rax\n");
+        return;
     }
 
     gen(node->lhs);
@@ -195,7 +204,8 @@ void codegen(Function *prog)
         // プロローグ
         printf("  push rbp\n");
         printf("  mov rbp, rsp\n");
-        printf("  sub rsp, %d\n", fn->stack_size);
+        if (fn->stack_size)
+            printf("  sub rsp, %d\n", fn->stack_size);
 
         // 定義された関数の引数をスタックに積んでおく
         int i = 0;

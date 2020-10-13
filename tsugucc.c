@@ -7,7 +7,6 @@ int main(int argc, char **argv)
         error("引数の個数が正しくありません");
         return 1;
     }
-    // トークナイズしてパースする
     user_input = argv[1];
     token = tokenize();
     Function *prog = program();
