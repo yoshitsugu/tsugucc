@@ -48,6 +48,7 @@ bool consume(char *op);
 Token *consume_ident();
 bool expect(char *op);
 char *expect_ident();
+void expect_ident_str(char *str);
 int expect_number();
 char *strndup(char *str, int len);
 bool at_eof();

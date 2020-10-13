@@ -73,6 +73,7 @@ VarList *read_func_params()
         return NULL;
 
     VarList *head = calloc(1, sizeof(VarList));
+    expect_ident_str("int");
     head->var = push_var(expect_ident());
     VarList *cur = head;
 
@@ -80,6 +81,7 @@ VarList *read_func_params()
     {
         expect(",");
         cur->next = calloc(1, sizeof(VarList));
+        expect_ident_str("int");
         cur->next->var = push_var(expect_ident());
         cur = cur->next;
     }
@@ -339,11 +341,16 @@ Node *primary()
             return node;
         }
 
-        Var *var = find_var(tok);
-        if (!var)
-            var = push_var(strndup(tok->str, tok->len));
-        return new_var(var);
-    }
+        if (strcmp(tok->str, "int") == 0)
+        {
+            char *ident = expect_ident();
+            Var *var = push_var(ident);
+            return new_var(var);
+        }
 
+        Var *var = find_var(tok);
+        if (var)
+            return new_var(var);
+    }
     return new_node_num(expect_number());
 }

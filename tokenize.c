@@ -73,6 +73,15 @@ char *expect_ident()
     return ident;
 }
 
+void expect_ident_str(char *str)
+{
+    if (token->kind != TK_IDENT)
+        error_at(token->str, "識別子ではありません");
+    if (strncmp(token->str, "int", token->len) != 0)
+        error_at(token->str, "指定された識別子ではありません");
+    token = token->next;
+}
+
 bool at_eof()
 {
     return token->kind == TK_EOF;
