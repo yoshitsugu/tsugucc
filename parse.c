@@ -89,6 +89,13 @@ VarList *read_func_params()
     return head;
 }
 
+Node *new_var(Var *var)
+{
+    Node *node = new_node(ND_VAR);
+    node->var = var;
+    return node;
+}
+
 Function *function()
 {
     locals = NULL;
@@ -117,6 +124,24 @@ Function *function()
 Node *stmt()
 {
     Node *node;
+
+    if (consume("int"))
+    {
+        node = new_node(ND_VAR);
+        Type *type = calloc(1, sizeof(Type));
+        type->kind = TY_INT;
+        type->base = NULL;
+        while (consume("*"))
+        {
+            type->base = pointer_to(type);
+        }
+        char *ident = expect_ident();
+        Var *var = push_var(ident);
+        node->var = var;
+        node->ty = type;
+        expect(";");
+        return node;
+    }
 
     if (consume("return"))
     {
@@ -300,13 +325,6 @@ Node *func_args()
     return head;
 }
 
-Node *new_var(Var *var)
-{
-    Node *node = new_node(ND_VAR);
-    node->var = var;
-    return node;
-}
-
 Var *push_var(char *name)
 {
     Var *var = calloc(1, sizeof(Var));
@@ -339,13 +357,6 @@ Node *primary()
             node->funcname = strndup(tok->str, tok->len);
             node->args = func_args();
             return node;
-        }
-
-        if (strcmp(tok->str, "int") == 0)
-        {
-            char *ident = expect_ident();
-            Var *var = push_var(ident);
-            return new_var(var);
         }
 
         Var *var = find_var(tok);

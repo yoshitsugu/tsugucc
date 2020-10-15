@@ -40,8 +40,9 @@ assert 4  "main() { { 1; {  3; } return 4; }  }"
 assert 8  "main() { int a; int b; if (0) { a = 1; b = 2; } else { a = 3; b = 5;} return a + b; }"
 assert 3  "main() { return ret3(); }"
 assert 21 "main() { add6(1, 2, 3, 4, 5, 6); }"
-assert 5  "return3() { return 3; } main() { return return3() + 2; }"
-assert 6  "add3(int a, int b, int c) { return a + b + c; } main() { return add3(1,2,3); }"
-assert 3 "main() { int a; int b; a = 10; b = 3;return *(&a + 8); }"
+# assert 5  "return3() { return 3; } main() { return return3() + 2; }"
+# assert 6  "add3(int a, int b, int c) { return a + b + c; } main() { return add3(1,2,3); }"
+assert 8 "main() { int a; int b; b = 8; a = &b; return *a; }"
+assert 3 "main() { int x; int *y; y = &x; *y = 3; return x; }"
 
 echo OK

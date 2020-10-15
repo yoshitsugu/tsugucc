@@ -86,6 +86,7 @@ typedef enum
     ND_DEREF,   // 単項演算子*
 } NodeKind;
 
+typedef struct Type Type;
 typedef struct Node Node;
 
 // 抽象構文木のノードの型
@@ -93,6 +94,7 @@ struct Node
 {
     NodeKind kind; // ノードの型
     Node *next;    // Next node
+    Type *ty;
 
     Node *lhs; // 左辺
     Node *rhs; // 右辺
@@ -130,7 +132,29 @@ Function *program();
 Var *push_var(char *name);
 
 //
-// codegen.c
+// type.c
 //
 
+typedef enum
+{
+    TY_INT,
+    TY_PTR
+} TypeKind;
+
+struct Type
+{
+    TypeKind kind;
+    Type *base;
+};
+
+extern Type *ty_int;
+
+bool is_integer(Type *ty);
+void add_type(Node *node);
+Type *pointer_to(Type *base);
+
+//
+// codegen.c
+//
+void gen(Node *node);
 void codegen(Function *code);

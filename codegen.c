@@ -7,14 +7,18 @@ char *funcname;
 // Pushes the given node's address to the stack.
 void gen_addr(Node *node)
 {
-    if (node->kind == ND_VAR)
+    switch (node->kind)
     {
+    case ND_VAR:
         printf("  lea rax, [rbp-%d]\n", node->var->offset);
         printf("  push rax\n");
         return;
+    case ND_DEREF:
+        gen(node->lhs);
+        return;
     }
 
-    error("not an lvalue");
+    error("not a value");
 }
 
 void gen(Node *node)
