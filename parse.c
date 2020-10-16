@@ -42,6 +42,61 @@ Node *new_node_num(int val)
     return node;
 }
 
+Node *new_add(Node *lhs, Node *rhs)
+{
+    add_type(lhs);
+    add_type(rhs);
+
+    // int + int
+    if (is_integer(lhs->ty) && is_integer(rhs->ty))
+        return new_binary(ND_ADD, lhs, rhs);
+
+    if (lhs->ty->base && rhs->ty->base)
+        error("invalid operands");
+
+    // Canonicalize `num + ptr` to `ptr + num`.
+    if (!lhs->ty->base && rhs->ty->base)
+    {
+        Node *tmp = lhs;
+        lhs = rhs;
+        rhs = tmp;
+    }
+
+    // ptr + num
+    rhs = new_binary(ND_MUL, rhs, new_node_num(4));
+    return new_binary(ND_ADD, lhs, rhs);
+}
+
+static Node *new_sub(Node *lhs, Node *rhs)
+{
+    add_type(lhs);
+    add_type(rhs);
+
+    // num - num
+    if (is_integer(lhs->ty) && is_integer(rhs->ty))
+        return new_binary(ND_SUB, lhs, rhs);
+
+    // ptr - num
+    if (lhs->ty->base && is_integer(rhs->ty))
+    {
+        rhs = new_binary(ND_MUL, rhs, new_node_num(4));
+        add_type(rhs);
+        Node *node = new_binary(ND_SUB, lhs, rhs);
+        node->ty = lhs->ty;
+        return node;
+    }
+
+    // ptr - ptr, which returns how many elements are between the two.
+    if (lhs->ty->base && rhs->ty->base)
+    {
+        Node *node = new_binary(ND_SUB, lhs, rhs);
+        node->ty = ty_int;
+        return new_binary(ND_DIV, node, new_node_num(8));
+    }
+
+    error("invalid operands");
+}
+
 Var *find_var(Token *tok)
 {
     for (VarList *vl = locals; vl; vl = vl->next)
@@ -74,7 +129,7 @@ VarList *read_func_params()
 
     VarList *head = calloc(1, sizeof(VarList));
     expect_ident_str("int");
-    head->var = push_var(expect_ident());
+    head->var = push_var(expect_ident(), ty_int);
     VarList *cur = head;
 
     while (!consume(")"))
@@ -82,7 +137,7 @@ VarList *read_func_params()
         expect(",");
         cur->next = calloc(1, sizeof(VarList));
         expect_ident_str("int");
-        cur->next->var = push_var(expect_ident());
+        cur->next->var = push_var(expect_ident(), ty_int);
         cur = cur->next;
     }
 
@@ -127,17 +182,13 @@ Node *stmt()
 
     if (consume("int"))
     {
-        node = new_node(ND_VAR);
-        Type *type = calloc(1, sizeof(Type));
-        type->kind = TY_INT;
-        type->base = NULL;
+        Type *type = ty_int;
+
         while (consume("*"))
-        {
-            type->base = pointer_to(type);
-        }
+            type = pointer_to(type);
         char *ident = expect_ident();
-        Var *var = push_var(ident);
-        node->var = var;
+        Var *var = push_var(ident, type);
+        node = new_var(var);
         node->ty = type;
         expect(";");
         return node;
@@ -273,9 +324,9 @@ Node *add()
     for (;;)
     {
         if (consume("+"))
-            node = new_binary(ND_ADD, node, mul());
+            node = new_add(node, mul());
         else if (consume("-"))
-            node = new_binary(ND_SUB, node, mul());
+            node = new_sub(node, mul());
         else
             return node;
     }
@@ -325,10 +376,11 @@ Node *func_args()
     return head;
 }
 
-Var *push_var(char *name)
+Var *push_var(char *name, Type *type)
 {
     Var *var = calloc(1, sizeof(Var));
     var->name = name;
+    var->ty = type;
 
     VarList *vl = calloc(1, sizeof(VarList));
     vl->var = var;

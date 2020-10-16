@@ -28,10 +28,12 @@ struct Token
     int len;
 };
 
+typedef struct Type Type;
 typedef struct Var Var;
 struct Var
 {
     char *name; // 変数名
+    Type *ty;
     int offset; // RBPからのオフセット
 };
 
@@ -86,7 +88,6 @@ typedef enum
     ND_DEREF,   // 単項演算子*
 } NodeKind;
 
-typedef struct Type Type;
 typedef struct Node Node;
 
 // 抽象構文木のノードの型
@@ -129,7 +130,7 @@ struct Function
 };
 
 Function *program();
-Var *push_var(char *name);
+Var *push_var(char *name, Type *type);
 
 //
 // type.c
