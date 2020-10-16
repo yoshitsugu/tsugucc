@@ -86,6 +86,7 @@ typedef enum
     ND_FUNCDEF, // 関数定義
     ND_ADDR,    // 単項演算子&
     ND_DEREF,   // 単項演算子*
+    TK_SIZEOF,  // sizeof
 } NodeKind;
 
 typedef struct Node Node;

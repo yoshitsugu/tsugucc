@@ -97,6 +97,19 @@ static Node *new_sub(Node *lhs, Node *rhs)
     error("invalid operands");
 }
 
+Node *new_sizeof(Node *node)
+{
+    add_type(node);
+    switch (node->ty->kind)
+    {
+    case TY_INT:
+        return new_node_num(4);
+    case TY_PTR:
+        return new_node_num(8);
+    }
+    error("unknown type");
+}
+
 Var *find_var(Token *tok)
 {
     for (VarList *vl = locals; vl; vl = vl->next)
@@ -349,6 +362,8 @@ Node *mul()
 
 Node *unary()
 {
+    if (consume("sizeof"))
+        return new_sizeof(unary());
     if (consume("+"))
         return primary();
     if (consume("-"))

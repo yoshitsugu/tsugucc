@@ -52,5 +52,8 @@ assert 21 "main() { add6(1, 2, 3, 4, 5, 6); }"
 # assert 6  "add3(int a, int b, int c) { return a + b + c; } main() { return add3(1,2,3); }"
 assert 5 'main() { int *p; int *q; alloc4(&p, 1, 2, 5, 8); q = p + 2; return *q; }'
 assert 3 "main() { int x; int *y; y = &x; *y = 3; return x; }"
+assert 4 "main() { return sizeof(3); }"
+assert 8 "main() { int *x; return sizeof(x); }"
+assert 4 "main() { int *x; return sizeof(sizeof(x)); }"
 
 echo OK

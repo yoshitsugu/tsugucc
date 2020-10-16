@@ -128,7 +128,7 @@ char *strndup(char *str, int len)
 char *starts_with_reserved(char *p)
 {
     // Keyword
-    static char *kw[] = {"return", "if", "else", "while", "for", "int"};
+    static char *kw[] = {"return", "if", "else", "while", "for", "int", "sizeof"};
 
     for (int i = 0; i < sizeof(kw) / sizeof(*kw); i++)
     {
