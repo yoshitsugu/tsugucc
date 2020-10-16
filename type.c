@@ -15,6 +15,20 @@ Type *pointer_to(Type *base)
     return ty;
 }
 
+int offset_size(Type *ty)
+{
+    switch (ty->kind)
+    {
+    case TY_INT:
+        return 8;
+    case TY_PTR:
+        return 8;
+    case TY_ARRAY:
+        return ty->array_size * offset_size(ty->base);
+    }
+    error("unknown type");
+}
+
 void add_type(Node *node)
 {
     if (!node || node->ty)

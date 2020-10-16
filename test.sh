@@ -55,5 +55,6 @@ assert 3 "main() { int x; int *y; y = &x; *y = 3; return x; }"
 assert 4 "main() { return sizeof(3); }"
 assert 8 "main() { int *x; return sizeof(x); }"
 assert 4 "main() { int *x; return sizeof(sizeof(x)); }"
+assert 10 "main() { int x[3]; int *y; y = &x + 2; *y = 10; return *(&x + 2); }"
 
 echo OK

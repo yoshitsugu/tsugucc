@@ -140,13 +140,15 @@ Var *push_var(char *name, Type *type);
 typedef enum
 {
     TY_INT,
-    TY_PTR
+    TY_PTR,
+    TY_ARRAY
 } TypeKind;
 
 struct Type
 {
     TypeKind kind;
     Type *base;
+    size_t array_size;
 };
 
 extern Type *ty_int;
@@ -154,6 +156,7 @@ extern Type *ty_int;
 bool is_integer(Type *ty);
 void add_type(Node *node);
 Type *pointer_to(Type *base);
+int offset_size(Type *ty);
 
 //
 // codegen.c

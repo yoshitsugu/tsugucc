@@ -200,6 +200,15 @@ Node *stmt()
         while (consume("*"))
             type = pointer_to(type);
         char *ident = expect_ident();
+        if (consume("["))
+        {
+            Type *t = calloc(1, sizeof(Type));
+            t->kind = TY_ARRAY;
+            t->array_size = expect_number();
+            t->base = type;
+            type = t;
+            expect("]");
+        }
         Var *var = push_var(ident, type);
         node = new_var(var);
         node->ty = type;
@@ -403,7 +412,6 @@ Var *push_var(char *name, Type *type)
     locals = vl;
     return var;
 }
-
 Node *primary()
 {
     if (consume("("))
