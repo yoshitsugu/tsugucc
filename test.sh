@@ -47,5 +47,7 @@ assert 8  "int main() { return sizeof(3); }"
 assert 8  "int main() { int *x; return sizeof(x); }"
 assert 8  "int main() { int *x; return sizeof(sizeof(x)); }"
 assert 4  "int main() { int x[3]; *x=3; *(x+1)=4; *(x+2)=5; return *(x+1); }"
+assert 32 "int x[4]; int main() { return sizeof(x); }"
+assert 3 "int x; int main() { x = 3; return x; }"
 
 echo OK
