@@ -1,23 +1,9 @@
 #include "tsugucc.h"
 
-char *user_input;
-// 現在着目しているトークン
-Token *token;
+// Input string
+static char *current_input;
 
-void error_at(char *loc, char *fmt, ...)
-{
-    va_list ap;
-    va_start(ap, fmt);
-
-    int pos = loc - user_input;
-    fprintf(stderr, "%s\n", user_input);
-    fprintf(stderr, "%*s", pos, "");
-    fprintf(stderr, "^ ");
-    vfprintf(stderr, fmt, ap);
-    fprintf(stderr, "\n");
-    exit(1);
-}
-
+// Reports an error and exit.
 void error(char *fmt, ...)
 {
     va_list ap;
@@ -27,177 +13,170 @@ void error(char *fmt, ...)
     exit(1);
 }
 
-bool consume(char *op)
+// Reports an error location and exit.
+static void verror_at(char *loc, char *fmt, va_list ap)
 {
-    if (token->kind != TK_RESERVED ||
-        strlen(op) != token->len ||
-        memcmp(token->str, op, token->len))
-        return false;
-    token = token->next;
-    return true;
+    int pos = loc - current_input;
+    fprintf(stderr, "%s\n", current_input);
+    fprintf(stderr, "%*s", pos, ""); // print pos spaces.
+    fprintf(stderr, "^ ");
+    vfprintf(stderr, fmt, ap);
+    fprintf(stderr, "\n");
+    exit(1);
 }
 
-Token *consume_ident()
+void error_at(char *loc, char *fmt, ...)
 {
-    if (token->kind != TK_IDENT)
-        return NULL;
-    Token *t = token;
-    token = token->next;
-    return t;
+    va_list ap;
+    va_start(ap, fmt);
+    verror_at(loc, fmt, ap);
 }
 
-bool expect(char *op)
+void error_tok(Token *tok, char *fmt, ...)
 {
-    if (token->kind != TK_RESERVED ||
-        strlen(op) != token->len ||
-        memcmp(token->str, op, token->len))
-        error_at(token->str, "'%s'ではありません", op);
-    token = token->next;
+    va_list ap;
+    va_start(ap, fmt);
+    verror_at(tok->loc, fmt, ap);
 }
 
-int expect_number()
+// Consumes the current token if it matches `op`.
+bool equal(Token *tok, char *op)
 {
-    if (token->kind != TK_NUM)
-        error_at(token->str, "数ではありません");
-    int val = token->val;
-    token = token->next;
-    return val;
+    return memcmp(tok->loc, op, tok->len) == 0 && op[tok->len] == '\0';
 }
 
-char *expect_ident()
+// Ensure that the current token is `op`.
+Token *skip(Token *tok, char *op)
 {
-    if (token->kind != TK_IDENT)
-        error_at(token->str, "識別子ではありません");
-    char *ident = token->str;
-    token = token->next;
-    return ident;
+    if (!equal(tok, op))
+        error_tok(tok, "expected '%s'", op);
+    return tok->next;
 }
 
-void expect_ident_str(char *str)
+bool consume(Token **rest, Token *tok, char *str)
 {
-    if (token->kind != TK_IDENT)
-        error_at(token->str, "識別子ではありません");
-    if (strncmp(token->str, "int", token->len) != 0)
-        error_at(token->str, "指定された識別子ではありません");
-    token = token->next;
+    if (equal(tok, str))
+    {
+        *rest = tok->next;
+        return true;
+    }
+    *rest = tok;
+    return false;
 }
 
-bool at_eof()
-{
-    return token->kind == TK_EOF;
-}
-
-Token *new_token(TokenKind kind, Token *cur, char *str, int len)
+// Create a new token.
+static Token *new_token(TokenKind kind, char *start, char *end)
 {
     Token *tok = calloc(1, sizeof(Token));
     tok->kind = kind;
-    tok->str = strndup(str, len);
-    tok->len = len;
-    cur->next = tok;
+    tok->loc = start;
+    tok->len = end - start;
     return tok;
 }
 
-bool startswith(char *p, char *q)
+static bool startswith(char *p, char *q)
 {
-    return memcmp(p, q, strlen(q)) == 0;
+    return strncmp(p, q, strlen(q)) == 0;
 }
 
-int is_alpha(char c)
+// Returns true if c is valid as the first character of an identifier.
+static bool is_ident1(char c)
 {
-    return ('a' <= c && c <= 'z') ||
-           ('A' <= c && c <= 'Z') ||
-           (c == '_');
+    return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || c == '_';
 }
 
-int is_alnum(char c)
+// Returns true if c is valid as a non-first character of an identifier.
+static bool is_ident2(char c)
 {
-    return is_alpha(c) ||
-           ('0' <= c && c <= '9');
+    return is_ident1(c) || ('0' <= c && c <= '9');
 }
 
-char *strndup(char *str, int len)
+// Read a punctuator token from p and returns its length.
+static int read_punct(char *p)
 {
+    if (startswith(p, "==") || startswith(p, "!=") ||
+        startswith(p, "<=") || startswith(p, ">="))
+        return 2;
 
-    char *buffer = malloc(len + 1);
-    memcpy(buffer, str, len);
-    buffer[len] = '\0';
-
-    return buffer;
+    return ispunct(*p) ? 1 : 0;
 }
 
-char *starts_with_reserved(char *p)
+static bool is_keyword(Token *tok)
 {
-    // Keyword
-    static char *kw[] = {"return", "if", "else", "while", "for", "int", "sizeof"};
+    static char *kw[] = {
+        "return",
+        "if",
+        "else",
+        "for",
+        "while",
+        "int",
+        "sizeof",
+    };
 
     for (int i = 0; i < sizeof(kw) / sizeof(*kw); i++)
-    {
-        int len = strlen(kw[i]);
-        if (startswith(p, kw[i]) && !is_alnum(p[len]))
-            return kw[i];
-    }
-
-    // Multi-letter punctuator
-    static char *ops[] = {"==", "!=", "<=", ">="};
-
-    for (int i = 0; i < sizeof(ops) / sizeof(*ops); i++)
-        if (startswith(p, ops[i]))
-            return ops[i];
-
-    return NULL;
+        if (equal(tok, kw[i]))
+            return true;
+    return false;
 }
 
-Token *tokenize()
+static void convert_keywords(Token *tok)
 {
-    char *p = user_input;
-    Token head;
-    head.next = NULL;
+    for (Token *t = tok; t->kind != TK_EOF; t = t->next)
+        if (is_keyword(t))
+            t->kind = TK_KEYWORD;
+}
+
+// Tokenize a given string and returns new tokens.
+Token *tokenize(char *p)
+{
+    current_input = p;
+    Token head = {};
     Token *cur = &head;
 
     while (*p)
     {
+        // Skip whitespace characters.
         if (isspace(*p))
         {
             p++;
             continue;
         }
 
-        char *kw = starts_with_reserved(p);
-        if (kw)
-        {
-            int len = strlen(kw);
-            cur = new_token(TK_RESERVED, cur, p, len);
-            p += len;
-            continue;
-        }
-
-        if (strchr("+-*/()<>;={},&[]", *p))
-        {
-            cur = new_token(TK_RESERVED, cur, p++, 1);
-            continue;
-        }
-
-        if (is_alpha(*p))
-        {
-            char *q = p++;
-            while (is_alnum(*p))
-                p++;
-            cur = new_token(TK_IDENT, cur, q, p - q);
-            continue;
-        }
-
+        // Numeric literal
         if (isdigit(*p))
         {
-            cur = new_token(TK_NUM, cur, p, 0);
+            cur = cur->next = new_token(TK_NUM, p, p);
             char *q = p;
-            cur->val = strtol(p, &p, 10);
+            cur->val = strtoul(p, &p, 10);
             cur->len = p - q;
             continue;
         }
 
-        error_at(p, "トークナイズできません");
+        // Identifier or keyword
+        if (is_ident1(*p))
+        {
+            char *start = p;
+            do
+            {
+                p++;
+            } while (is_ident2(*p));
+            cur = cur->next = new_token(TK_IDENT, start, p);
+            continue;
+        }
+
+        // Punctuators
+        int punct_len = read_punct(p);
+        if (punct_len)
+        {
+            cur = cur->next = new_token(TK_PUNCT, p, p + punct_len);
+            p += cur->len;
+            continue;
+        }
+
+        error_at(p, "invalid token");
     }
 
-    new_token(TK_EOF, cur, p, 0);
+    cur = cur->next = new_token(TK_EOF, p, p);
+    convert_keywords(head.next);
     return head.next;
 }

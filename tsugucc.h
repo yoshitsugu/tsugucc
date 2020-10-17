@@ -1,3 +1,5 @@
+#define _POSIX_C_SOURCE 200809L
+#include <assert.h>
 #include <ctype.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -5,103 +7,106 @@
 #include <stdlib.h>
 #include <string.h>
 
+typedef struct Type Type;
+typedef struct Node Node;
+
 //
 // tokenize.c
 //
 
+// Token
 typedef enum
 {
-    TK_RESERVED, // 記号
-    TK_IDENT,    // 識別子
-    TK_NUM,      // 整数トークン
-    TK_EOF,      // 入力の終わりを表すトークン
+    TK_IDENT,   // Identifiers
+    TK_PUNCT,   // Punctuators
+    TK_KEYWORD, // Keywords
+    TK_NUM,     // Numeric literals
+    TK_EOF,     // End-of-file markers
 } TokenKind;
 
+// Token type
 typedef struct Token Token;
-
 struct Token
 {
-    TokenKind kind;
-    Token *next;
-    int val;
-    char *str;
-    int len;
+    TokenKind kind; // Token kind
+    Token *next;    // Next token
+    int val;        // If kind is TK_NUM, its value
+    char *loc;      // Token location
+    int len;        // Token length
 };
 
-typedef struct Type Type;
-typedef struct Var Var;
-struct Var
-{
-    char *name; // 変数名
-    Type *ty;
-    int offset; // RBPからのオフセット
-};
-
-typedef struct VarList VarList;
-struct VarList
-{
-    VarList *next;
-    Var *var;
-};
-
-void error_at(char *loc, char *fmt, ...);
 void error(char *fmt, ...);
-bool consume(char *op);
-Token *consume_ident();
-bool expect(char *op);
-char *expect_ident();
-void expect_ident_str(char *str);
-int expect_number();
-char *strndup(char *str, int len);
-bool at_eof();
-Token *new_token(TokenKind kind, Token *cur, char *str, int len);
-Token *tokenize();
-
-extern char *user_input;
-extern Token *token;
+void error_at(char *loc, char *fmt, ...);
+void error_tok(Token *tok, char *fmt, ...);
+bool equal(Token *tok, char *op);
+Token *skip(Token *tok, char *op);
+bool consume(Token **rest, Token *tok, char *str);
+Token *tokenize(char *input);
 
 //
 // parse.c
 //
 
+// Local variable
+typedef struct Obj Obj;
+struct Obj
+{
+    Obj *next;
+    char *name; // Variable name
+    Type *ty;   // Type
+    int offset; // Offset from RBP
+};
+
+// Function
+typedef struct Function Function;
+struct Function
+{
+    Function *next;
+    char *name;
+    Obj *params;
+
+    Node *body;
+    Obj *locals;
+    int stack_size;
+};
+
+// AST node
 typedef enum
 {
-    ND_ADD,     // +
-    ND_SUB,     // -
-    ND_MUL,     // *
-    ND_DIV,     // /
-    ND_EQ,      // ==
-    ND_NE,      // !=
-    ND_LT,      // <
-    ND_LE,      // <=
-    ND_NUM,     // 整数
-    ND_ASSIGN,  // =
-    ND_VAR,     // ローカル変数
-    ND_RETURN,  // return
-    ND_IF,      // if
-    ND_WHILE,   // while
-    ND_FOR,     // for
-    ND_BLOCK,   // 複文(ブロック)
-    ND_FUNCALL, // 関数呼出
-    ND_FUNCDEF, // 関数定義
-    ND_ADDR,    // 単項演算子&
-    ND_DEREF,   // 単項演算子*
-    TK_SIZEOF,  // sizeof
+    ND_ADD,       // +
+    ND_SUB,       // -
+    ND_MUL,       // *
+    ND_DIV,       // /
+    ND_NEG,       // unary -
+    ND_EQ,        // ==
+    ND_NE,        // !=
+    ND_LT,        // <
+    ND_LE,        // <=
+    ND_ASSIGN,    // =
+    ND_ADDR,      // unary &
+    ND_DEREF,     // unary *
+    ND_RETURN,    // "return"
+    ND_IF,        // "if"
+    ND_FOR,       // "for" or "while"
+    ND_BLOCK,     // { ... }
+    ND_FUNCALL,   // Function call
+    ND_EXPR_STMT, // Expression statement
+    ND_VAR,       // Variable
+    ND_NUM,       // Integer
 } NodeKind;
 
-typedef struct Node Node;
-
-// 抽象構文木のノードの型
+// AST node type
 struct Node
 {
-    NodeKind kind; // ノードの型
+    NodeKind kind; // Node kind
     Node *next;    // Next node
-    Type *ty;
+    Type *ty;      // Type, e.g. int or pointer to int
+    Token *tok;    // Representative token
 
-    Node *lhs; // 左辺
-    Node *rhs; // 右辺
+    Node *lhs; // Left-hand side
+    Node *rhs; // Right-hand side
 
-    // "if", "while" or "for" statement
+    // "if" or "for" statement
     Node *cond;
     Node *then;
     Node *els;
@@ -111,27 +116,15 @@ struct Node
     // Block
     Node *body;
 
-    // Function
+    // Function call
     char *funcname;
     Node *args;
 
-    Var *var; // kindがND_LVARの場合のみ使う
-    int val;  // kindがND_NUMの場合のみ使う
+    Obj *var; // Used if kind == ND_VAR
+    int val;  // Used if kind == ND_NUM
 };
 
-typedef struct Function Function;
-struct Function
-{
-    Function *next;
-    char *name;
-    Node *node;
-    int stack_size;
-    VarList *params; // 引数
-    VarList *locals; // ローカル変数
-};
-
-Function *program();
-Var *push_var(char *name, Type *type);
+Function *parse(Token *tok);
 
 //
 // type.c
@@ -141,25 +134,48 @@ typedef enum
 {
     TY_INT,
     TY_PTR,
-    TY_ARRAY
+    TY_FUNC,
+    TY_ARRAY,
 } TypeKind;
 
 struct Type
 {
     TypeKind kind;
+    int size; // sizeof() value
+
+    // Pointer-to or array-of type. We intentionally use the same member
+    // to represent pointer/array duality in C.
+    //
+    // In many contexts in which a pointer is expected, we examine this
+    // member instead of "kind" member to determine whether a type is a
+    // pointer or not. That means in many contexts "array of T" is
+    // naturally handled as if it were "pointer to T", as required by
+    // the C spec.
     Type *base;
-    size_t array_size;
+
+    // Declaration
+    Token *name;
+
+    // Array
+    int array_len;
+
+    // Function type
+    Type *return_ty;
+    Type *params;
+    Type *next;
 };
 
 extern Type *ty_int;
 
 bool is_integer(Type *ty);
-void add_type(Node *node);
+Type *copy_type(Type *ty);
 Type *pointer_to(Type *base);
-int offset_size(Type *ty);
+Type *func_type(Type *return_ty);
+Type *array_of(Type *base, int size);
+void add_type(Node *node);
 
 //
 // codegen.c
 //
-void gen(Node *node);
-void codegen(Function *code);
+
+void codegen(Function *prog);

@@ -1,32 +1,44 @@
 #include "tsugucc.h"
 
-Type *ty_int = &(Type){TY_INT};
+Type *ty_int = &(Type){TY_INT, 8};
 
 bool is_integer(Type *ty)
 {
     return ty->kind == TY_INT;
 }
 
+Type *copy_type(Type *ty)
+{
+    Type *ret = calloc(1, sizeof(Type));
+    *ret = *ty;
+    return ret;
+}
+
 Type *pointer_to(Type *base)
 {
     Type *ty = calloc(1, sizeof(Type));
     ty->kind = TY_PTR;
+    ty->size = 8;
     ty->base = base;
     return ty;
 }
 
-int offset_size(Type *ty)
+Type *func_type(Type *return_ty)
 {
-    switch (ty->kind)
-    {
-    case TY_INT:
-        return 8;
-    case TY_PTR:
-        return 8;
-    case TY_ARRAY:
-        return ty->array_size * offset_size(ty->base);
-    }
-    error("unknown type");
+    Type *ty = calloc(1, sizeof(Type));
+    ty->kind = TY_FUNC;
+    ty->return_ty = return_ty;
+    return ty;
+}
+
+Type *array_of(Type *base, int len)
+{
+    Type *ty = calloc(1, sizeof(Type));
+    ty->kind = TY_ARRAY;
+    ty->size = base->size * len;
+    ty->base = base;
+    ty->array_len = len;
+    return ty;
 }
 
 void add_type(Node *node)
@@ -44,6 +56,8 @@ void add_type(Node *node)
 
     for (Node *n = node->body; n; n = n->next)
         add_type(n);
+    for (Node *n = node->args; n; n = n->next)
+        add_type(n);
 
     switch (node->kind)
     {
@@ -51,7 +65,12 @@ void add_type(Node *node)
     case ND_SUB:
     case ND_MUL:
     case ND_DIV:
+    case ND_NEG:
+        node->ty = node->lhs->ty;
+        return;
     case ND_ASSIGN:
+        if (node->lhs->ty->kind == TY_ARRAY)
+            error_tok(node->lhs->tok, "not an lvalue");
         node->ty = node->lhs->ty;
         return;
     case ND_EQ:
@@ -59,20 +78,21 @@ void add_type(Node *node)
     case ND_LT:
     case ND_LE:
     case ND_NUM:
+    case ND_FUNCALL:
         node->ty = ty_int;
         return;
     case ND_VAR:
         node->ty = node->var->ty;
         return;
     case ND_ADDR:
-        node->ty = pointer_to(node->lhs->ty);
+        if (node->lhs->ty->kind == TY_ARRAY)
+            node->ty = pointer_to(node->lhs->ty->base);
+        else
+            node->ty = pointer_to(node->lhs->ty);
         return;
     case ND_DEREF:
-        if (node->lhs->ty->kind != TY_PTR)
-        {
-            printf("invalid pointer dereference");
-            exit(1);
-        }
+        if (!node->lhs->ty->base)
+            error_tok(node->tok, "invalid pointer dereference");
         node->ty = node->lhs->ty->base;
         return;
     }

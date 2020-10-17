@@ -2,14 +2,6 @@
 cat <<EOF | gcc -xc -c -o tmp2.o -
 int ret3() { return 3; }
 int add6(int a, int b, int c, int d, int e, int f) { return a + b + c + d + e + f; }
-void alloc4(int **p, int a, int b, int c, int d)
-{
-  *p = (int *)calloc(4, sizeof(int));
-  (*p)[0] = a;
-  (*p)[1] = b;
-  (*p)[2] = c;
-  (*p)[3] = d;
-}
 EOF
 
 assert() {
@@ -29,32 +21,31 @@ assert() {
   fi
 }
 
-assert 21 "main() { 5+20-4; }"
-assert 41 "main() { 12 + 34 - 5 ; }"
-assert 15 "main() { 5*(9-6); }"
-assert 4  "main() { (3+5)/2; }"
-assert 1  "main() { (-33+35)/2; }"
-assert 1  "main() { (2 * 3) <= 6; }"
-assert 0  "main() { (2 * 3) < 6; }"
-assert 4  "main() { int a; int b; a = 1;b = 3;return a + b;3 * 3; }"
-assert 4  "main() { int abc; int b2; int cde; abc = 100;b2 = 2;cde = abc = 1;abc + b2 + cde; }"
-assert 3  "main() { if (1-1) return 1; else return 3; }"
-assert 1  "main() { if (1) return 1; else return 3; }"
-assert 3  "main() { if (0) return 1; return 3; }"
-assert 20 "main() { int i; i=0; while( i<20 ) i = i + 1;return i; }"
-assert 11 "main() { int i; int a; a = 1;for(i=0;i<5;i=i+1) a = a + i; return a; }"
-assert 5  "main() { int i; i = 0;for(;i<5;) i = i + 1; return i; }"
-assert 4  "main() { { 1; {  3; } return 4; }  }"
-assert 8  "main() { int a; int b; if (0) { a = 1; b = 2; } else { a = 3; b = 5;} return a + b; }"
-assert 3  "main() { return ret3(); }"
-assert 21 "main() { add6(1, 2, 3, 4, 5, 6); }"
-# assert 5  "return3() { return 3; } main() { return return3() + 2; }"
-# assert 6  "add3(int a, int b, int c) { return a + b + c; } main() { return add3(1,2,3); }"
-assert 5 'main() { int *p; int *q; alloc4(&p, 1, 2, 5, 8); q = p + 2; return *q; }'
-assert 3 "main() { int x; int *y; y = &x; *y = 3; return x; }"
-assert 4 "main() { return sizeof(3); }"
-assert 8 "main() { int *x; return sizeof(x); }"
-assert 4 "main() { int *x; return sizeof(sizeof(x)); }"
-assert 10 "main() { int x[3]; int *y; y = &x + 2; *y = 10; return *(&x + 2); }"
+assert 21 "int main() { 5+20-4; }"
+assert 41 "int main() { 12 + 34 - 5 ; }"
+assert 15 "int main() { 5*(9-6); }"
+assert 4  "int main() { (3+5)/2; }"
+assert 1  "int main() { (-33+35)/2; }"
+assert 1  "int main() { (2 * 3) <= 6; }"
+assert 0  "int main() { (2 * 3) < 6; }"
+assert 4  "int main() { int a; int b; a = 1;b = 3;return a + b;3 * 3; }"
+assert 4  "int main() { int abc; int b2; int cde; abc = 100;b2 = 2;cde = abc = 1;abc + b2 + cde; }"
+assert 3  "int main() { if (1-1) return 1; else return 3; }"
+assert 1  "int main() { if (1) return 1; else return 3; }"
+assert 3  "int main() { if (0) return 1; return 3; }"
+assert 20 "int main() { int i; i=0; while( i<20 ) i = i + 1;return i; }"
+assert 11 "int main() { int i; int a; a = 1;for(i=0;i<5;i=i+1) a = a + i; return a; }"
+assert 5  "int main() { int i; i = 0;for(;i<5;) i = i + 1; return i; }"
+assert 4  "int main() { { 1; {  3; } return 4; }  }"
+assert 8  "int main() { int a; int b; if (0) { a = 1; b = 2; } else { a = 3; b = 5;} return a + b; }"
+assert 3  "int main() { return ret3(); }"
+assert 21 "int main() { add6(1, 2, 3, 4, 5, 6); }"
+assert 5  "int return3() { return 3; } int main() { return return3() + 2; }"
+assert 6  "int add3(int a, int b, int c) { return a + b + c; } int main() { return add3(1,2,3); }"
+assert 3  "int main() { int x; int *y; y = &x; *y = 3; return x; }"
+assert 8  "int main() { return sizeof(3); }"
+assert 8  "int main() { int *x; return sizeof(x); }"
+assert 8  "int main() { int *x; return sizeof(sizeof(x)); }"
+assert 4  "int main() { int x[3]; *x=3; *(x+1)=4; *(x+2)=5; return *(x+1); }"
 
 echo OK
