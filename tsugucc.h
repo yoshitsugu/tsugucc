@@ -135,6 +135,7 @@ typedef enum
     TY_PTR,
     TY_FUNC,
     TY_ARRAY,
+    TY_CHAR,
 } TypeKind;
 
 struct Type
@@ -164,6 +165,7 @@ struct Type
     Type *next;
 };
 
+extern Type *ty_char;
 extern Type *ty_int;
 
 bool is_integer(Type *ty);
