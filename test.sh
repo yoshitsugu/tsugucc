@@ -50,5 +50,6 @@ assert 4  "int main() { int x[3]; *x=3; *(x+1)=4; *(x+2)=5; return *(x+1); }"
 assert 32 "int x[4]; int main() { return sizeof(x); }"
 assert 3 "int x; int main() { x = 3; return x; }"
 assert 3 "int main() { char x[3]; x[0] = -1; x[1] = 2; int y; y = 4; return x[0] + y; }"
+assert 97 'int main() { return "abc"[0]; }'
 
 echo OK

@@ -73,7 +73,7 @@ static void load(Type *ty)
     }
 
     if (ty->size == 1)
-        printf("  mosbq (%%rax), %%rax\n");
+        printf("  movsbq (%%rax), %%rax\n");
     else
         printf("  mov (%%rax), %%rax\n");
 }
@@ -260,7 +260,15 @@ static void emit_data(Obj *prog)
         printf("  .data\n");
         printf("  .globl %s\n", var->name);
         printf("%s:\n", var->name);
-        printf("  .zero %d\n", var->ty->size);
+        if (var->init_data)
+        {
+            for (int i = 0; i < var->ty->size; i++)
+                printf("  .byte %d\n", var->init_data[i]);
+        }
+        else
+        {
+            printf("  .zero %d\n", var->ty->size);
+        }
     }
 }
 
