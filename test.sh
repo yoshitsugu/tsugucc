@@ -8,8 +8,8 @@ assert() {
   expected="$1"
   input="$2"
 
-  ./tsugucc "$input" > tmp.s
-  cc -o tmp tmp.s tmp2.o
+  echo "$input" | ./tsugucc - > tmp.s || exit
+  gcc -static -o tmp tmp.s tmp2.o
   ./tmp
   actual="$?"
 
